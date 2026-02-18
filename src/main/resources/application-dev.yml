@@ -1,0 +1,57 @@
+spring:
+
+  application:
+    name: AUTH-SERVICE
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/championsworld_auth
+    username: postgres
+    password: postgres@123
+    driver-class-name: org.postgresql.Driver
+
+#  spring:
+#    sql:
+#      init:
+#        mode: always
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: championsworldchandrapur@gmail.com
+    password: etwg fafh pngk qjda
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+
+server:
+  port: 8075
+
+jwt:
+  secret: championsworld-auth-service-jwt-secret-key-2026-secure
+  expiration-minutes: 1440
+
+google:
+  oauth:
+    client-id: 96478589645-mvurnhv2nl39njr4eoi8ao53i49mh84o.apps.googleusercontent.com
+    client-secret: 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
+    redirect-uri: http://localhost:3000/oauth/callback
+
+msg91:
+  auth-key: 492891AX1B50S10V6986e32aP1
+  otp-template-id: 6986e407eaaaca150873bc3c
+
+logging:
+  level:
+    com.shopping.b2c_ecommerce: DEBUG
