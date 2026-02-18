@@ -5,14 +5,9 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/championsworld_auth
-    username: postgres
-    password: postgres@123
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:your_password_here}
     driver-class-name: org.postgresql.Driver
-
-#  spring:
-#    sql:
-#      init:
-#        mode: always
 
   jpa:
     hibernate:
@@ -25,8 +20,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: championsworldchandrapur@gmail.com
-    password: etwg fafh pngk qjda
+    username: ${MAIL_USERNAME:your_email@gmail.com}
+    password: ${MAIL_PASSWORD:your_app_password_here}
     properties:
       mail:
         smtp:
@@ -39,18 +34,18 @@ server:
   port: 8075
 
 jwt:
-  secret: championsworld-auth-service-jwt-secret-key-2026-secure
+  secret: ${JWT_SECRET:your-jwt-secret-key-here}
   expiration-minutes: 1440
 
 google:
   oauth:
-    client-id: 96478589645-mvurnhv2nl39njr4eoi8ao53i49mh84o.apps.googleusercontent.com
-    client-secret: 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
-    redirect-uri: http://localhost:3000/oauth/callback
+    client-id: ${GOOGLE_CLIENT_ID:your_google_client_id_here}
+    client-secret: ${GOOGLE_CLIENT_SECRET:your_google_client_secret_here}
+    redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:3000/oauth/callback}
 
 msg91:
-  auth-key: 492891AX1B50S10V6986e32aP1
-  otp-template-id: 6986e407eaaaca150873bc3c
+  auth-key: ${MSG91_AUTH_KEY:your_msg91_auth_key_here}
+  otp-template-id: ${MSG91_OTP_TEMPLATE_ID:your_template_id_here}
 
 logging:
   level:
