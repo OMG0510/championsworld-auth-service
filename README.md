@@ -17,6 +17,100 @@ A Spring Boot–based microservice responsible for authentication, authorization
 
 ---
 
+## Project Structure
+
+```
+src/main/java/com/shopping/b2c_ecommerce/
+│
+├── config/
+│   ├── CorsGlobalConfig.java         # Global CORS configuration
+│   ├── CorsProperties.java           # CORS properties binding
+│   ├── PasswordConfig.java           # BCrypt password encoder bean
+│   └── SecurityConfig.java           # Spring Security filter chain & access rules
+│
+├── controller/
+│   ├── AdminController.java          # Admin management endpoints
+│   ├── CommonController.java         # Token validation & password reset
+│   ├── CustomerController.java       # Customer auth (OTP, OAuth, /me)
+│   └── CustomerAddressController.java# Address CRUD endpoints
+│
+├── dto/                              # Request & Response objects
+│   ├── AddAddressRequest.java
+│   ├── AddressResponse.java
+│   ├── AdminStatusRequest/Response.java
+│   ├── AdminSummaryResponse.java
+│   ├── EmailOtpSendRequest/VerifyRequest.java
+│   ├── ErrorResponse.java
+│   ├── ForgotPasswordRequest.java
+│   ├── GoogleCodeRequest / LoginRequest / OAuthRequest / TokenResponse / UserInfo.java
+│   ├── LoginRequest / LoginResponse.java
+│   ├── MeResponse.java
+│   ├── OtpSendRequest / OtpVerifyRequest.java
+│   ├── RegisterRequest / RegisterStepRequest.java
+│   ├── ResetPasswordRequest.java
+│   ├── TokenValidationResponse.java
+│   ├── UserAddressResponse.java
+│   └── UserIdentity.java
+│
+├── entity/
+│   ├── Address.java
+│   ├── PasswordResetToken.java
+│   ├── Role.java
+│   ├── User.java
+│   └── UserRole.java
+│
+├── enums/
+│   └── AuthProvider.java             # EMAIL, PHONE, GOOGLE
+│
+├── exception/
+│   ├── GlobalExceptionHandler.java   # Centralized @ControllerAdvice handler
+│   ├── AccountInactiveException.java
+│   ├── AddressNotFoundException.java
+│   ├── EmailOtpSendException.java
+│   ├── EmailSendException.java
+│   ├── GoogleOAuthException.java
+│   ├── GoogleUserInfoException.java
+│   ├── InvalidCredentialsException.java
+│   ├── OtpNotVerifiedException.java
+│   ├── OtpSendFailedException.java
+│   ├── OtpVerificationException.java
+│   ├── PasswordMismatchException.java
+│   ├── PasswordResetTokenInvalidException.java
+│   ├── PasswordResetTokenNotFoundException.java
+│   ├── PasswordResetUserNotFoundException.java
+│   ├── RoleNotAssignedException.java
+│   ├── RoleNotFoundException.java
+│   ├── UnauthorizedAddressAccessException.java
+│   ├── UnauthorizedAdminActionException.java
+│   ├── UserAlreadyExistsException.java
+│   ├── UserNotAdminException.java
+│   └── UserNotFoundException.java
+│
+├── repository/
+│   ├── AddressRepository.java
+│   ├── PasswordResetTokenRepository.java
+│   ├── RoleRepository.java
+│   ├── UserRepository.java
+│   └── UserRoleRepository.java
+│
+├── security/
+│   ├── JwtAuthenticationFilter.java  # Per-request JWT validation filter
+│   └── JwtUtil.java                  # JWT generation, parsing & validation
+│
+└── service/
+    ├── AddressService.java
+    ├── AuthService.java
+    ├── EmailOtpService.java
+    ├── EmailService.java
+    ├── GoogleOAuthService.java
+    ├── OtpService.java
+    ├── PasswordResetService.java
+    ├── RoleService.java
+    └── UserService.java
+```
+
+---
+
 ## Features
 
 ### Authentication
@@ -192,6 +286,88 @@ mail:
 ```
 
 > **Note:** The App Password is generated from the email account's security settings (e.g., Google Account → Security → 2-Step Verification → App Passwords). It should be stored securely and never committed to version control. Use environment variables or a secrets manager in production.
+
+---
+
+## API Request & Response Reference
+
+Full request/response examples for all endpoints (including body schemas, success responses, and error scenarios) are documented in the API reference document:
+
+📄 **[Auth Service – Full API Documentation](https://docs.google.com/document/d/17LXdhpQYXE8UriqNJzKqrU0x8C4CIeObicMEtYqZnmA/edit?usp=sharing)**
+
+This document covers all 24 endpoints across `AdminAuthController`, `CommonAuthController`, `CustomerAuthController`, and `CustomerAddressController`, and is intended for frontend developers, QA testers, and integrating backend services.
+
+---
+
+## OTP Storage Strategy
+
+OTPs for both SMS and email flows are stored **in-memory** on the server side using a `Map` with expiry tracking.
+
+- Each OTP entry is keyed by the user's phone number or email address.
+- OTPs are single-use — once verified, the entry is removed from memory immediately.
+- If a new OTP is requested before the previous one expires, the old entry is overwritten, effectively invalidating it.
+- OTPs expire after a configured TTL (default: 5 minutes).
+
+> **Note:** Since OTPs are stored in application memory, they do not survive a server restart. This is acceptable for a stateless OTP flow. For multi-instance deployments, migrating OTP storage to a distributed cache like **Redis** with TTL is recommended.
+
+---
+
+## Error Handling
+
+Errors are handled centrally via a `GlobalExceptionHandler` class annotated with `@ControllerAdvice`. Every custom exception in the `exception/` package maps to a specific HTTP status and returns a human-readable error message directly in the response body as a plain string.
+
+This means there is no generic error envelope — the response body itself is the error description, making it straightforward for clients to display messages directly.
+
+Example error responses:
+
+| Scenario | HTTP Status | Response Body |
+|---|---|---|
+| Invalid credentials | `401 Unauthorized` | `"Invalid email or password"` |
+| OTP expired or wrong | `400 Bad Request` | `"Invalid or expired OTP"` |
+| User not found | `404 Not Found` | `"User not found"` |
+| Account deactivated | `403 Forbidden` | `"Account is inactive"` |
+| Unauthorized action | `403 Forbidden` | `"You are not authorized to perform this action"` |
+| Address not found | `404 Not Found` | `"Address not found or does not belong to this user"` |
+| User already exists | `409 Conflict` | `"User already exists with this email/phone"` |
+| Password mismatch | `400 Bad Request` | `"Passwords do not match"` |
+
+Custom exception classes such as `InvalidCredentialsException`, `OtpVerificationException`, `UserNotFoundException`, and others are thrown from the service layer and caught by `GlobalExceptionHandler`, which sets the appropriate HTTP status and writes the message to the response.
+
+---
+
+## JWT Token
+
+The service uses **HS256-signed JWTs** for stateless authentication. Tokens are generated upon successful login and must be included in the `Authorization` header for all protected endpoints.
+
+**Header:**
+```
+Authorization: Bearer <token>
+```
+
+**Token Payload (Claims):**
+
+| Claim | Type | Description |
+|---|---|---|
+| `sub` | String | User's email address (subject) |
+| `userId` | Long | Internal user ID |
+| `role` | String | Assigned role: `SUPER_ADMIN`, `ADMIN`, or `CUSTOMER` |
+| `iat` | Timestamp | Issued-at time (Unix epoch, seconds) |
+| `exp` | Timestamp | Expiry time (Unix epoch, seconds) |
+
+**Example decoded payload:**
+```json
+{
+  "sub": "admin1@example.com",
+  "userId": 5,
+  "role": "ADMIN",
+  "iat": 1771414628,
+  "exp": 1771501028
+}
+```
+
+- Default token validity: **24 hours** (configurable via `jwt.expiration` in ms)
+- Signing algorithm: **HS256**
+- Token validation is performed on every request by `JwtAuthenticationFilter` before the request reaches the controller.
 
 ---
 
