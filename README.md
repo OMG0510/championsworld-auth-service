@@ -6,7 +6,7 @@ A Spring Boot–based microservice responsible for authentication, authorization
 
 ## Tech Stack
 
-- **Java 17**
+- **Java 21**
 - **Spring Boot** + **Spring Security**
 - **JWT** (Bearer Token Authentication)
 - **PostgreSQL**
