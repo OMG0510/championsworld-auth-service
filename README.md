@@ -293,7 +293,7 @@ mail:
 
 Full request/response examples for all endpoints (including body schemas, success responses, and error scenarios) are documented in the API reference document:
 
-📄 **[Auth Service – Full API Documentation](https://docs.google.com/document/d/17LXdhpQYXE8UriqNJzKqrU0x8C4CIeObicMEtYqZnmA/edit?usp=sharing)**
+📄 **[Auth Service – Full API Documentation](https://drive.google.com/file/d/1fCc2iToO-H7MVDZZMr764P2XnM9NhELq/view?usp=sharing)**
 
 This document covers all 24 endpoints across `AdminAuthController`, `CommonAuthController`, `CustomerAuthController`, and `CustomerAddressController`, and is intended for frontend developers, QA testers, and integrating backend services.
 
